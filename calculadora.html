@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora OFFICIAL — UNEARTHED™ BTF Robotics</title>
+
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Poppins', Arial, sans-serif;
+        background: #e6edf2;
+    }
+
+    /* Barra fixa no topo */
+    #topBar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: linear-gradient(90deg, #0e7490, #0c4a6e);
+        color: white;
+        padding: 18px;
+        font-size: 22px;
+        font-weight: bold;
+        text-align: center;
+        z-index: 1000;
+
+        display: grid;
+        grid-template-columns: 120px auto 120px 120px;
+        align-items: center;
+        gap: 10px;
+
+        box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    }
+
+    #topBar button {
+        background: #facc15;
+        border: none;
+        padding: 10px 15px;
+        font-weight: bold;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+        transition: 0.2s;
+    }
+
+    #topBar button:hover {
+        background: #fde047;
+    }
+
+    #btnExcel { background: #22c55e !important; }
+    #btnReset { background: #ef4444 !important; color: white !important; }
+
+    /* Grade das missões */
+    .container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 25px;
+        padding: 130px 25px 40px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+        border-left: 6px solid #0e7490;
+        transition: 0.2s;
+    }
+
+    .card:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+    }
+
+    .card h3 {
+        margin: 0 0 10px;
+        color: #0f172a;
+        font-size: 20px;
+    }
+
+    .desc {
+        font-size: 15px;
+        color: #475569;
+        margin-bottom: 15px;
+        min-height: 40px;
+        background: #f1f5f9;
+        padding: 8px 10px;
+        border-radius: 6px;
+    }
+
+    .task {
+        margin-bottom: 12px;
+        font-size: 15px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .task input[type="checkbox"] {
+        transform: scale(1.3);
+        margin-right: 6px;
+    }
+
+    .sliderValue {
+        font-size: 14px;
+        margin-top: 6px;
+        color: #0f172a;
+        font-weight: bold;
+        padding: 5px;
+        background: #f1f5f9;
+        border-radius: 6px;
+    }
+
+    input[type="range"] {
+        accent-color: #0e7490;
+    }
+</style>
+</head>
+<body>
+
+<!-- BAR FIXA -->
+<div id="topBar">
+    <button onclick="history.back()">⬅ Voltar</button>
+
+    <div style="text-align:center;">
+        TOTAL: <span id="totalPontos">0</span> pontos
+<br>
+<span style="font-size:15px; font-weight:400;">
+⏱ Saídas: <b id="saidaCron"></b>s &nbsp; | &nbsp;
+Trocas: <b id="trocaCron"></b>s
+</span>
+
+    </div>
+
+    <button id="btnExcel" onclick="exportarExcel()">Exportar</button>
+
+    <button id="btnReset" onclick="resetarTudo()">Resetar</button>
+</div>
+
+<!-- CONTAINER -->
+<div class="container" id="areaMissoes"></div>
+
+<script>
+
+const missoes = [
+    { nome: "Inspeção", descricao: "Todos os equipamentos dentro da área de lançamento", tipo: "checkbox", subtarefas: [{ nome: "Feito", pts: 30 }] },
+    { nome: "Missão 01 – Pesca de Artefatos", descricao: "Mover vagonetes entre arenas.", tipo: "slider", max: 3, customPoints: [10,10,10] },
+    { nome: "Missão 02 – Escavação Superficial", descricao: "Sedimentos e pincel.", tipo: "slider", max: 3, customPoints: [10,10,10] },
+    { nome: "Missão 03 – Exploradora de minas", descricao: "Levar a mineradora para o outro lado.", tipo: "checkbox", subtarefas: [{ nome: "Feito", pts: 30 },{ nome: "Ambas equipes levaram a mineradora", pts: 10 }] },
+    { nome: "Missão 04 – Extração Segura", descricao: "Remover artefato garantindo estabilidade.", tipo: "checkbox", subtarefas: [{ nome: "Artefato precioso fora da mina", pts: 30 },{ nome: "Cada estrutura de sustentação de pé", pts: 10 }] },
+    { nome: "Missão 05 – Reconstrução da Estrutura", descricao: "Virar o chão da estrutura.", tipo: "checkbox", subtarefas: [{ nome: "Chão virado para cima", pts: 30 }] },
+    { nome: "Missão 06 – Pedra de Moinho", descricao: "Remover a pedra da base.", tipo: "checkbox", subtarefas: [{ nome: "Pedra não tocando a base", pts: 30 }] },
+    { nome: "Missão 07 – Silo", descricao: "Retirar alimentos preservados.", tipo: "slider", max: 3, customPoints: [10,10,10] },
+    { nome: "Missão 08 – Forja", descricao: "Liberar blocos de minério.", tipo: "slider", max: 3, customPoints: [10,10,10] },
+    { nome: "Missão 09 – O que está à venda?", descricao: "Erguer telhado e mercadorias.", tipo: "checkbox", subtarefas: [{ nome: "Telhado levantado", pts: 20 },{ nome: "Mercadorias levantadas", pts: 10 }] },
+    { nome: "Missão 10 – Desequilíbrio da Balança", descricao: "Desequilibrar a balança.", tipo: "checkbox", subtarefas: [{ nome: "Balança tocando o tapete", pts: 20 },{ nome: "Prato removido", pts: 10 }] },
+    { nome: "Missão 11 – Pesca de Artefatos", descricao: "Suspender artefatos.", tipo: "checkbox", subtarefas: [{ nome: "Artefatos suspensos", pts: 20 },{ nome: "Bandeira abaixada", pts: 10 }] },
+    { nome: "Missão 12 – Operação de Resgate", descricao: "Escavar navio antigo.", tipo: "checkbox", subtarefas: [{ nome: "Areia removida", pts: 20 },{ nome: "Navio levantado", pts: 10 }] },
+    { nome: "Missão 13 – Reconstrução da Estátua", descricao: "Erguer a estátua completa.", tipo: "slider", max: 1, customPoints: [30] },
+    { nome: "Missão 14 – Fórum", descricao: "Entregar artefatos ao fórum.", tipo: "slider", max: 7, customPoints: [5,5,5,5,5,5,5] },
+    { nome: "Missão 15 – Marcação do Sítio + Discos", descricao: "Bandeiras e discos restantes.", tipo: "checkbox", subtarefas: [
+            { nome: "Cada bandeira colocada", pts: 10 },
+            { nome: "1 disco restante", pts: 10 },
+            { nome: "2 discos restantes", pts: 15 },
+            { nome: "3 discos restantes", pts: 25 },
+            { nome: "4 discos restantes", pts: 35 },
+            { nome: "5 discos restantes", pts: 50 },
+            { nome: "6 discos restantes", pts: 50 }
+        ] }
+];
+
+const area = document.getElementById("areaMissoes");
+
+missoes.forEach((m, index) => {
+    let html = `<div class="card"><h3>${m.nome}</h3><div class="desc">${m.descricao}</div>`;
+
+    if (m.tipo === "slider") {
+        html += `
+        <div class="task">
+            <input type="range" min="0" max="${m.max}" value="0" class="slider" data-index="${index}">
+            <div class="sliderValue" id="sliderValue${index}">Selecionado: 0<br>Pontos: 0</div>
+        </div>`;
+    }
+
+    if (m.tipo === "checkbox") {
+        m.subtarefas.forEach(t => {
+            html += `
+            <div class="task">
+                <label><input type="checkbox" class="taskCheck" data-pts="${t.pts}"> ${t.nome} — <b>${t.pts} pts</b></label>
+            </div>`;
+        });
+    }
+
+    html += `</div>`;
+    area.innerHTML += html;
+});
+
+function atualizarTotal() {
+    let total = 0;
+
+    document.querySelectorAll(".taskCheck").forEach(chk => {
+        if (chk.checked) total += Number(chk.dataset.pts);
+    });
+
+    document.querySelectorAll(".slider").forEach(sl => {
+        const idx = sl.dataset.index;
+        const val = Number(sl.value);
+        let soma = 0;
+        for (let i = 0; i < val; i++) soma += missoes[idx].customPoints[i];
+
+        total += soma;
+        document.getElementById("sliderValue" + idx).innerHTML = `Selecionado: ${val}<br>Pontos: ${soma}`;
+    });
+
+    document.getElementById("totalPontos").textContent = total;
+}
+
+document.addEventListener("change", atualizarTotal);
+
+function resetarTudo() {
+    document.querySelectorAll(".taskCheck").forEach(chk => chk.checked = false);
+    document.querySelectorAll(".slider").forEach(sl => sl.value = 0);
+    atualizarTotal();
+}
+
+/* EXPORTAÇÃO 100% CORRIGIDA */
+function exportarExcel() {
+    // 1️⃣ Pega os totais vindos do cronômetro
+    const totalSaidasCron = Number(localStorage.getItem("totalSaidas") || 0);
+    const totalTrocasCron = Number(localStorage.getItem("totalTrocas") || 0);
+
+    // 2️⃣ Pega o total de pontos da calculadora (supondo que você tenha um elemento #totalPontos)
+    const total = document.getElementById("totalPontos")?.textContent || 0;
+
+    let linhas = [];
+
+    // --- CABEÇALHO ---
+    linhas.push(["Calculadora UNEARTHED – BTF Robotics"]);
+    linhas.push(["Pontuação Total:", total]);
+    linhas.push([]);
+
+    // --- DADOS DO CRONÔMETRO ---
+    linhas.push(["TEMPOS DO CRONÔMETRO"]);
+    linhas.push(["Total de Saídas (s)", totalSaidasCron]);
+    linhas.push(["Total de Trocas (s)", totalTrocasCron]);
+    linhas.push([]);
+
+    // --- MISSÕES DA CALCULADORA ---
+    linhas.push(["Missão", "Status", "Pontos"]);
+
+    // Aqui assumimos que você tem um array "missoes" definido na calculadora
+    missoes.forEach((m, index) => {
+        let pontosMissao = 0;
+        let completo = false;
+
+        const card = document.getElementsByClassName("card")[index];
+
+        if (m.tipo === "checkbox") {
+            const checks = card.querySelectorAll(".taskCheck");
+            checks.forEach(chk => {
+                if (chk.checked) pontosMissao += Number(chk.dataset.pts);
+            });
+            completo = pontosMissao > 0;
+        }
+
+        if (m.tipo === "slider") {
+            const sl = document.querySelector(`.slider[data-index="${index}"]`);
+            const val = Number(sl.value);
+            for (let k = 0; k < val; k++) {
+                pontosMissao += m.customPoints[k];
+            }
+            completo = val > 0;
+        }
+
+        linhas.push([
+            m.nome,
+            completo ? "Concluída" : "Não concluída",
+            pontosMissao
+        ]);
+    });
+
+    // --- GERAR CSV ---
+    let csv = linhas.map(row => row.join(";")).join("\n");
+
+    const BOM = "\uFEFF"; // garante que o Excel abra com UTF-8
+    const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "resultado_calculadora_unearth_btf.csv";
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+
+document.getElementById("saidaCron").textContent = totalSaidasCron;
+document.getElementById("trocaCron").textContent = totalTrocasCron;
+
+</script>
+</body>
+</html>
