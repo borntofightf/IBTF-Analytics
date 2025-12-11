@@ -4,41 +4,111 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Cronômetro — 2:30</title>
+
   <style>
     :root{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial;}
+
     body{
-      display:flex;align-items:center;justify-content:center;
-      min-height:100vh;background:#f4f6fb;margin:0;color:#0f172a
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      gap:30px;
+      padding:20px;
+      min-height:100vh;
+      background:#f4f6fb;
+      margin:0;
+      color:#0f172a;
     }
+
+    /* CARD DO CRONÔMETRO */
     .card{
-      background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(15,23,42,0.08);
-      padding:28px;max-width:420px;width:92%;text-align:center
+      background:#fff;
+      border-radius:12px;
+      box-shadow:0 6px 20px rgba(15,23,42,0.08);
+      padding:28px;
+      width:420px;
+      text-align:center;
     }
+
     .time{font-size:64px;font-weight:700;letter-spacing:1px;margin:6px 0}
+
     .controls{display:flex;gap:10px;justify-content:center;margin-top:16px}
+
     button{
-      padding:10px 14px;border-radius:10px;border:0;font-weight:600;cursor:pointer;
-      box-shadow:0 2px 6px rgba(2,6,23,0.06)
+      padding:10px 14px;border-radius:10px;border:0;font-weight:600;
+      cursor:pointer;box-shadow:0 2px 6px rgba(2,6,23,0.06)
     }
     button.primary{background:#0ea5a4;color:white}
     button.ghost{background:#eef2ff;color:#3730a3}
     button.warn{background:#fde68a;color:#92400e}
+
     .marks{margin-top:20px;text-align:left}
     .marks h3{margin:0 0 8px 0;font-size:14px;color:#334155}
+
     .mark-list{
       list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px
     }
+
     .mark{
       padding:8px 10px;border-radius:8px;background:#f8fafc;
       border:1px solid rgba(2,6,23,0.04);
-      display:flex;justify-content:space-between;align-items:center;font-weight:600
+      display:flex;justify-content:space-between;align-items:center;
+      font-weight:600
     }
+
     .small{font-size:13px;color:#475569;font-weight:500}
+
     footer{margin-top:12px;font-size:12px;color:#64748b}
+
+    /* LISTA DE MÚSICAS */
+    .music-card{
+      background:white;
+      width:280px;
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 6px 20px rgba(15,23,42,0.08);
+      height:fit-content;
+    }
+
+    .music-card h2{
+      font-size:20px;
+      margin-top:0;
+      text-align:center;
+      color:#0f172a;
+    }
+
+    .music-list{
+      list-style:none;
+      padding:0;
+      margin:0;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .music-item{
+      background:#f8fafc;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(2,6,23,0.04);
+      cursor:pointer;
+      transition:0.2s;
+    }
+
+    .music-item:hover{
+      background:#e0f7f7;
+      transform:scale(1.02);
+    }
+
+    .music-item strong{color:#0ea5a4}
   </style>
 </head>
 
+
+
 <body>
+
+  <!-- ================= CARD DO CRONÔMETRO ================= -->
   <div class="card">
     <h2>Cronômetro — 2:30 (contagem regressiva)</h2>
 
@@ -61,7 +131,49 @@
     <footer>Marcas registram o tempo entre eventos.</footer>
   </div>
 
+
+
+  <!-- ================= LISTA DE MÚSICAS ================= -->
+  <div class="music-card">
+    <h2>Músicas dos Integrantes</h2>
+
+    <ul class="music-list">
+
+      <!-- EXEMPLOS — EDITE AQUI -->
+      <li class="music-item" onclick="openMusic('https://www.youtube.com/watch?v=bWSn9jL1g7I&list=RDbWSn9jL1g7I&start_radio=1')">
+        <strong>Deivid:</strong> Burguesinha
+      </li>
+
+      <li class="music-item" onclick="openMusic('https://www.youtube.com/watch?v=NwzlyWr9fAM&list=RDNwzlyWr9fAM&start_radio=1')">
+        <strong>Perez:</strong> Complicada
+      </li>
+
+      <li class="music-item" onclick="openMusic('https://www.youtube.com/watch?v=E5HLF92vf9U&list=RDE5HLF92vf9U&start_radio=1')">
+        <strong>Ramos:</strong> She's A Lover
+      </li>
+
+      <li class="music-item" onclick="openMusic('https://www.youtube.com/watch?v=3JZ4pnNtyxQ')">
+        <strong>Isabela:</strong> Counting Stars
+      </li>
+
+      <li class="music-item" onclick="openMusic('https://www.youtube.com/watch?v=P-lxOj0XpEE&list=RDP-lxOj0XpEE&start_radio=1')">
+        <strong>Izadora:</strong> Oceano
+      </li>
+
+      <li class="music-item" onclick="openMusic('https://www.youtube.com/watch?v=3-qwqrQXsXQ&list=RD3-qwqrQXsXQ&start_radio=1')">
+        <strong>Jean:</strong> Samurai
+      </li>
+
+    </ul>
+  </div>
+
+
+
 <script>
+function openMusic(url){
+  window.open(url, "_blank");
+}
+
 (function(){
   const initialSeconds = 2*60 + 30;
   let remaining = initialSeconds;
@@ -77,10 +189,7 @@
   const exportBtn = document.getElementById('export');
   const goCalcBtn = document.getElementById('goCalc');
 
-  // ⭐ ÁUDIO DA CONTAGEM
   const countdownAudio = new Audio("Cronometro Para FLL Com Narração.m4a");
-
-  // Flag para cancelar contagem 5→1
   let isCountdownRunning = false;
 
   let nextType = 'Saída';
@@ -114,15 +223,13 @@
     if(running) rafId = requestAnimationFrame(tick);
   }
 
-  // ⭐ CONTAGEM 5→1 com áudio
   async function startCountdownBeforeTimer(){
     isCountdownRunning = true;
-
     countdownAudio.currentTime = 0;
     countdownAudio.play();
 
     for (let n = 5; n >= 1; n--) {
-      if (!isCountdownRunning) return; // se resetou, para aqui
+      if (!isCountdownRunning) return;
       display.textContent = n;
       await new Promise(r => setTimeout(r, 1000));
     }
@@ -153,9 +260,7 @@
     }
   });
 
-  // ⭐ RESET COMPLETO — audio + contagem 5→1 + cronômetro
   resetBtn.addEventListener('click', ()=>{
-
     isCountdownRunning = false;
 
     countdownAudio.pause();
