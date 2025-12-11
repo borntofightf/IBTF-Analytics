@@ -6,25 +6,42 @@
   <title>Cronômetro — 2:30</title>
   <style>
     :root{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Arial;}
-    body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f4f6fb;margin:0;color:#0f172a}
-    .card{background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(15,23,42,0.08);padding:28px;max-width:420px;width:92%;text-align:center}
+    body{
+      display:flex;align-items:center;justify-content:center;
+      min-height:100vh;background:#f4f6fb;margin:0;color:#0f172a
+    }
+    .card{
+      background:#fff;border-radius:12px;box-shadow:0 6px 20px rgba(15,23,42,0.08);
+      padding:28px;max-width:420px;width:92%;text-align:center
+    }
     .time{font-size:64px;font-weight:700;letter-spacing:1px;margin:6px 0}
     .controls{display:flex;gap:10px;justify-content:center;margin-top:16px}
-    button{padding:10px 14px;border-radius:10px;border:0;font-weight:600;cursor:pointer;box-shadow:0 2px 6px rgba(2,6,23,0.06)}
+    button{
+      padding:10px 14px;border-radius:10px;border:0;font-weight:600;cursor:pointer;
+      box-shadow:0 2px 6px rgba(2,6,23,0.06)
+    }
     button.primary{background:#0ea5a4;color:white}
     button.ghost{background:#eef2ff;color:#3730a3}
     button.warn{background:#fde68a;color:#92400e}
     .marks{margin-top:20px;text-align:left}
     .marks h3{margin:0 0 8px 0;font-size:14px;color:#334155}
-    .mark-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
-    .mark{padding:8px 10px;border-radius:8px;background:#f8fafc;border:1px solid rgba(2,6,23,0.04);display:flex;justify-content:space-between;align-items:center;font-weight:600}
+    .mark-list{
+      list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px
+    }
+    .mark{
+      padding:8px 10px;border-radius:8px;background:#f8fafc;
+      border:1px solid rgba(2,6,23,0.04);
+      display:flex;justify-content:space-between;align-items:center;font-weight:600
+    }
     .small{font-size:13px;color:#475569;font-weight:500}
     footer{margin-top:12px;font-size:12px;color:#64748b}
   </style>
 </head>
+
 <body>
   <div class="card">
     <h2>Cronômetro — 2:30 (contagem regressiva)</h2>
+
     <div id="display" class="time">02:30</div>
 
     <div class="controls">
@@ -39,11 +56,9 @@
     </div>
 
     <button id="export" class="primary" style="margin-top:15px; width:100%;">Exportar para Excel</button>
-
-    <!-- BOTÃO PARA A CALCULADORA -->
     <button id="goCalc" class="ghost" style="margin-top:10px; width:100%;">Ir para Calculadora</button>
 
-    <footer>Ao clicar em <strong>Marcar</strong> será registrada a diferença de tempo (em segundos) desde a marca anterior, e o tempo restante (MM:SS).</footer>
+    <footer>Marcas registram o tempo entre eventos.</footer>
   </div>
 
 <script>
@@ -61,6 +76,12 @@
   const markList = document.getElementById('markList');
   const exportBtn = document.getElementById('export');
   const goCalcBtn = document.getElementById('goCalc');
+
+  // ⭐ ÁUDIO DA CONTAGEM
+  const countdownAudio = new Audio("Cronometro Para FLL Com Narração.m4a");
+
+  // Flag para cancelar contagem 5→1
+  let isCountdownRunning = false;
 
   let nextType = 'Saída';
   let lancamentoCount = 1;
@@ -84,27 +105,75 @@
     const delta = (now - lastTick)/1000;
     lastTick = now;
     remaining -= delta;
-    if(remaining <= 0){ remaining = 0; running = false; startPauseBtn.textContent = 'Iniciar'; }
+    if(remaining <= 0){
+      remaining = 0;
+      running = false;
+      startPauseBtn.textContent = 'Iniciar';
+    }
     render();
     if(running) rafId = requestAnimationFrame(tick);
   }
 
-  startPauseBtn.addEventListener('click', ()=>{
+  // ⭐ CONTAGEM 5→1 com áudio
+  async function startCountdownBeforeTimer(){
+    isCountdownRunning = true;
+
+    countdownAudio.currentTime = 0;
+    countdownAudio.play();
+
+    for (let n = 5; n >= 1; n--) {
+      if (!isCountdownRunning) return; // se resetou, para aqui
+      display.textContent = n;
+      await new Promise(r => setTimeout(r, 1000));
+    }
+
+    if (!isCountdownRunning) return;
+
+    render();
+    isCountdownRunning = false;
+  }
+
+  startPauseBtn.addEventListener('click', async ()=>{
+
+    if(!running && remaining === initialSeconds){
+      startPauseBtn.textContent = "Pausar";
+      await startCountdownBeforeTimer();
+    }
+
     running = !running;
-    if(running){ lastTick = null; startPauseBtn.textContent = 'Pausar'; rafId = requestAnimationFrame(tick); }
-    else { startPauseBtn.textContent = 'Iniciar'; if(rafId) cancelAnimationFrame(rafId); rafId = null; lastTick = null; }
+
+    if(running){
+      startPauseBtn.textContent = 'Pausar';
+      lastTick = null;
+      rafId = requestAnimationFrame(tick);
+    } else {
+      startPauseBtn.textContent = 'Iniciar';
+      if(rafId) cancelAnimationFrame(rafId);
+      lastTick = null;
+    }
   });
 
+  // ⭐ RESET COMPLETO — audio + contagem 5→1 + cronômetro
   resetBtn.addEventListener('click', ()=>{
+
+    isCountdownRunning = false;
+
+    countdownAudio.pause();
+    countdownAudio.currentTime = 0;
+
     running = false;
     remaining = initialSeconds;
+
     if(rafId) cancelAnimationFrame(rafId);
     rafId = null;
     lastTick = null;
+
     startPauseBtn.textContent = 'Iniciar';
     render();
+
     markList.innerHTML = '';
     marks.length = 0;
+
     lancamentoCount = 1;
     trocaCount = 1;
     nextType = 'Saída';
@@ -121,33 +190,36 @@
 
     const li = document.createElement('li');
     li.className = 'mark';
-    li.innerHTML = `<span class="small"><strong>${nextType} ${number}</strong> — ${deltaSeconds}s desde a última marca</span><span class="small">restante ${timeLabel}</span>`;
+    li.innerHTML =
+      `<span class="small"><strong>${nextType} ${number}</strong> — ${deltaSeconds}s desde a última marca</span>
+       <span class="small">restante ${timeLabel}</span>`;
     markList.append(li);
 
     marks.push({ tipo: nextType, numero: number, desdeUltimaSegundos: deltaSeconds });
 
     lastElapsed = elapsedTotal;
 
-    if(nextType === 'Saída'){ lancamentoCount++; nextType = 'Troca de anexo'; }
-    else { trocaCount++; nextType = 'Saída'; }
+    if(nextType === 'Saída'){
+      lancamentoCount++;
+      nextType = 'Troca de anexo';
+    } else {
+      trocaCount++;
+      nextType = 'Saída';
+    }
   });
 
-  /* EXPORTAR APENAS OS TOTAIS */
   exportBtn.addEventListener('click', ()=>{
-    if (marks.length === 0) { 
-      alert('Nenhuma marca para exportar'); 
-      return; 
-    }
+    if (marks.length === 0) return alert('Nenhuma marca para exportar');
 
     let totalSaidas = 0;
     let totalTrocas = 0;
 
-    marks.forEach(m => {
-      if (m.tipo === "Saída") totalSaidas += m.desdeUltimaSegundos;
-      else if (m.tipo === "Troca de anexo") totalTrocas += m.desdeUltimaSegundos;
+    marks.forEach(m=>{
+      if(m.tipo==="Saída") totalSaidas+=m.desdeUltimaSegundos;
+      else totalTrocas+=m.desdeUltimaSegundos;
     });
 
-    let csv = "﻿Tipo;TempoTotal(s)\n";
+    let csv = "Tipo;TempoTotal(s)\n";
     csv += `Saídas;${totalSaidas}\n`;
     csv += `Trocas de anexo;${totalTrocas}\n`;
 
@@ -156,31 +228,26 @@
     const a = document.createElement('a');
     a.href = url;
     a.download = 'cronometro_totais.csv';
-    document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
     URL.revokeObjectURL(url);
   });
 
-  /* ENVIAR DADOS PARA A CALCULADORA */
   goCalcBtn.addEventListener('click', ()=>{
+    let totalSaidas = 0;
+    let totalTrocas = 0;
 
-      let totalSaidas = 0;
-      let totalTrocas = 0;
+    marks.forEach(m=>{
+      if(m.tipo==="Saída") totalSaidas+=m.desdeUltimaSegundos;
+      else totalTrocas+=m.desdeUltimaSegundos;
+    });
 
-      marks.forEach(m => {
-        if (m.tipo === "Saída") totalSaidas += m.desdeUltimaSegundos;
-        else if (m.tipo === "Troca de anexo") totalTrocas += m.desdeUltimaSegundos;
-      });
+    localStorage.setItem("totalSaidas", totalSaidas);
+    localStorage.setItem("totalTrocas", totalTrocas);
 
-      localStorage.setItem("totalSaidas", totalSaidas);
-      localStorage.setItem("totalTrocas", totalTrocas);
-
-      window.location.href = "calculadora.html";
+    window.location.href = "calculadora.html";
   });
 
   render();
-
 })();
 </script>
 </body>
